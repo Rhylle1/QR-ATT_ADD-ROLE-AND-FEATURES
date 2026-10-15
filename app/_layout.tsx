@@ -16,14 +16,26 @@ export default function RootLayout() {
     );
   }
 
-  const path = segments?.[0];
-  const inAuthGroup = path === 'login' || path === 'register';
-  const inTabsGroup = path === '(tabs)';
+  const firstSegment = segments?.[0];
+
+  const inAuthGroup =
+    firstSegment === 'login' ||
+    firstSegment === 'register';
+
+  const inTabsGroup = firstSegment === '(tabs)';
+
+  // User is logged out → send to Login
+  if (!session && !inAuthGroup) {
+    return <Redirect href="/login" />;
+  }
+
+  // User is logged in → don't allow Login/Register
+  if (session && inAuthGroup) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {!session && inTabsGroup && <Redirect href="/login" />}
-      {session && inAuthGroup && <Redirect href="/(tabs)" />}
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="(tabs)" />

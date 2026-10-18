@@ -94,7 +94,7 @@ export default function ProfileScreen() {
             setLoading(true);
 
             try {
-              await signOut();
+              await (signOut as unknown as () => Promise<void>)();
               router.replace('/login');
             } catch (error: any) {
               Alert.alert(
@@ -110,9 +110,17 @@ export default function ProfileScreen() {
     );
   };
 
-
   const isTeacher = profile?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
+
+  const roleLabel = isAdmin
+    ? 'Administrator'
+    : isTeacher
+      ? 'Teacher'
+      : 'Student';
+
   const displayName = profile?.full_name || 'Your Name';
+
   const initial = (
     profile?.full_name || user?.email || 'U'
   ).charAt(0).toUpperCase();
@@ -143,12 +151,10 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.roleBadge,
-                  !isTeacher && styles.studentBadge,
+                  !isTeacher && !isAdmin && styles.studentBadge,
                 ]}
               >
-                <Text style={styles.roleText}>
-                  {isTeacher ? 'Teacher' : 'Student'}
-                </Text>
+                <Text style={styles.roleText}>{roleLabel}</Text>
               </View>
             </View>
 
@@ -237,19 +243,17 @@ export default function ProfileScreen() {
               <View style={styles.settingInfo}>
                 <Text style={styles.settingTitle}>Account Role</Text>
                 <Text style={styles.settingSubtitle}>
-                  {isTeacher ? 'Teacher account' : 'Student account'}
+                  {roleLabel} account
                 </Text>
               </View>
 
               <View
                 style={[
                   styles.roleBadge,
-                  !isTeacher && styles.studentBadge,
+                  !isTeacher && !isAdmin && styles.studentBadge,
                 ]}
               >
-                <Text style={styles.roleText}>
-                  {isTeacher ? 'Teacher' : 'Student'}
-                </Text>
+                <Text style={styles.roleText}>{roleLabel}</Text>
               </View>
             </View>
 

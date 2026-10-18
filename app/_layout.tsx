@@ -1,5 +1,10 @@
 import { Redirect, Stack, useSegments } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/lib/auth';
@@ -22,24 +27,22 @@ export default function RootLayout() {
     firstSegment === 'login' ||
     firstSegment === 'register';
 
-  const inTabsGroup = firstSegment === '(tabs)';
-
-  // User is logged out → send to Login
   if (!session && !inAuthGroup) {
     return <Redirect href="/login" />;
   }
 
-  // User is logged in → don't allow Login/Register
   if (session && inAuthGroup) {
     return <Redirect href="/(tabs)" />;
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="login" />
-      <Stack.Screen name="register" />
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </SafeAreaProvider>
   );
 }
 

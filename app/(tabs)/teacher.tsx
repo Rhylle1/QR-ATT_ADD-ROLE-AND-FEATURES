@@ -31,6 +31,7 @@ type EditTarget = 'start' | 'end';
 
 function toLocalISO(date: Date) {
   const pad = (n: number) => String(n).padStart(2, '0');
+
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate()
   )}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
@@ -40,6 +41,7 @@ function formatDateTime(value: string | Date | null) {
   if (!value) return 'Not set';
 
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return 'Not available';
 
   return date.toLocaleString('en-PH', {
@@ -72,11 +74,11 @@ export default function TeacherScreen() {
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
-  // Search fields
   const [eventSearch, setEventSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
 
   const isAndroid = Platform.OS === 'android';
+  const canMonitorAttendance = role === 'teacher' || role === 'admin';
 
   const refreshAttendance = useCallback(async () => {
     if (!user?.id) return;
@@ -106,22 +108,38 @@ export default function TeacherScreen() {
         }
 
         setRoleLoading(true);
+        setAttendanceError(null);
 
         try {
           const profile = await getProfile(user.id);
+
           if (!active) return;
 
           const currentRole = profile?.role ?? 'student';
           setRole(currentRole);
 
-          if (currentRole === 'teacher') {
+          if (currentRole === 'teacher' || currentRole === 'admin') {
             setLoadingAttendance(true);
-            const result = await getTeacherEventAttendance(user.id);
-            if (active) setEvents(result);
+
+            try {
+              const result = await getTeacherEventAttendance(user.id);
+
+              if (active) {
+                setEvents(result);
+              }
+            } catch {
+              if (active) {
+                setAttendanceError(
+                  'Unable to load attendance. Please refresh.'
+                );
+              }
+            } finally {
+              if (active) setLoadingAttendance(false);
+            }
           }
         } catch {
           if (active) {
-            setAttendanceError('Unable to load teacher information.');
+            setAttendanceError('Unable to load account information.');
           }
         } finally {
           if (active) {
@@ -233,7 +251,6 @@ export default function TeacherScreen() {
     }
   };
 
-  // Search event title or event code
   const filteredEvents = events.filter((event) => {
     const query = eventSearch.trim().toLowerCase();
 
@@ -254,7 +271,7 @@ export default function TeacherScreen() {
     );
   }
 
-  if (role !== 'teacher') {
+  if (!canMonitorAttendance) {
     return (
       <View style={styles.center}>
         <Ionicons
@@ -264,7 +281,7 @@ export default function TeacherScreen() {
         />
         <Text style={styles.title}>Teachers Only</Text>
         <Text style={styles.subtitle}>
-          Only teacher accounts can create events.
+          Only teacher and admin accounts can access this dashboard.
         </Text>
       </View>
     );
@@ -281,6 +298,7 @@ export default function TeacherScreen() {
         Create events and monitor student attendance.
       </Text>
 
+      {/* CREATE EVENT AND GENERATE QR */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Create Event</Text>
 
@@ -313,7 +331,9 @@ export default function TeacherScreen() {
             size={20}
             color={COLORS.primary}
           />
-          <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
+          <Text style={styles.dateText}>
+            {formatDateTime(startDate)}
+          </Text>
         </Pressable>
 
         <Text style={styles.label}>End date and time</Text>
@@ -326,7 +346,9 @@ export default function TeacherScreen() {
             size={20}
             color={COLORS.primary}
           />
-          <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
+          <Text style={styles.dateText}>
+            {formatDateTime(endDate)}
+          </Text>
         </Pressable>
 
         {editTarget && (
@@ -360,6 +382,7 @@ export default function TeacherScreen() {
         )}
       </View>
 
+      {/* ATTENDANCE MONITORING */}
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Attendance Monitoring</Text>
@@ -369,26 +392,27 @@ export default function TeacherScreen() {
             disabled={loadingAttendance}
             style={styles.refreshButton}
           >
-            <Ionicons
-              name="refresh-outline"
-              size={20}
-              color={COLORS.primary}
-            />
-            <Text style={styles.refreshText}>Refresh</Text>
+            {loadingAttendance ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Ionicons
+                name="refresh-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+            )}
+            <Text style={styles.refreshText}>
+              {loadingAttendance ? 'Loading...' : 'Refresh'}
+            </Text>
           </Pressable>
         </View>
 
         <Text style={styles.subtitle}>
-          Search your events and check the attendance records.
+          Search your events and check attendance records.
         </Text>
 
-        {/* Search events */}
         <View style={styles.searchBox}>
-          <Ionicons
-            name="search-outline"
-            size={20}
-            color="#687386"
-          />
+          <Ionicons name="search-outline" size={20} color="#687386" />
           <TextInput
             style={styles.searchInput}
             value={eventSearch}
@@ -405,10 +429,10 @@ export default function TeacherScreen() {
           )}
         </View>
 
-        {loadingAttendance ? (
-          <ActivityIndicator color={COLORS.primary} />
-        ) : attendanceError ? (
+        {attendanceError ? (
           <Text style={styles.errorText}>{attendanceError}</Text>
+        ) : loadingAttendance ? (
+          <ActivityIndicator color={COLORS.primary} />
         ) : events.length === 0 ? (
           <Text style={styles.subtitle}>
             No events found. Create an event first.
@@ -430,6 +454,7 @@ export default function TeacherScreen() {
             return (
               <View key={event.eventId} style={styles.eventCard}>
                 <Text style={styles.eventTitle}>{event.title}</Text>
+
                 <Text style={styles.smallText}>
                   Event code: {event.eventCode}
                 </Text>
@@ -454,7 +479,9 @@ export default function TeacherScreen() {
                 <Pressable
                   style={styles.viewButton}
                   onPress={() => {
-                    setSelectedEventId(isSelected ? null : event.eventId);
+                    setSelectedEventId(
+                      isSelected ? null : event.eventId
+                    );
                     setStudentSearch('');
                   }}
                 >
@@ -532,7 +559,8 @@ export default function TeacherScreen() {
                               {attendee.studentId}
                             </Text>
                             <Text style={styles.timeText}>
-                              Scanned: {formatDateTime(attendee.scannedAt)}
+                              Scanned:{' '}
+                              {formatDateTime(attendee.scannedAt)}
                             </Text>
                           </View>
                         </View>

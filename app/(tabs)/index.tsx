@@ -4,12 +4,12 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Header from '@/components/Header';
 import { supabase } from '@/lib/supabase';
@@ -99,8 +99,9 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -113,7 +114,6 @@ export default function HomeScreen() {
       >
         <Header title="Home" />
 
-        {/* Welcome */}
         <View style={styles.welcome}>
           <Text style={styles.eyebrow}>QR-ATT • ATTENDANCE</Text>
           <Text style={styles.heading}>Welcome to QR-ATT</Text>
@@ -122,7 +122,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* QR Attendance */}
         <Pressable
           onPress={() => router.push('/scan')}
           style={({ pressed }) => [
@@ -143,7 +142,6 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* Upcoming Events */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionText}>
             <Text style={styles.sectionTitle}>Upcoming Events</Text>
@@ -207,7 +205,6 @@ export default function HomeScreen() {
           ))
         )}
 
-        {/* Quick Access */}
         <View style={styles.quickSection}>
           <Text style={styles.sectionTitle}>Quick Access</Text>
           <Text style={styles.sectionSubtitle}>
@@ -224,7 +221,9 @@ export default function HomeScreen() {
             >
               <Text style={styles.quickIcon}>▦</Text>
               <Text style={styles.quickTitle}>Scan QR</Text>
-              <Text style={styles.quickDescription}>Record attendance</Text>
+              <Text style={styles.quickDescription}>
+                Record attendance
+              </Text>
             </Pressable>
 
             <Pressable
@@ -253,7 +252,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Student and Teacher Information */}
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Made for Everyone</Text>
           <Text style={styles.infoDescription}>
@@ -287,18 +285,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F5FF',
   },
+  scroll: {
+    flex: 1,
+  },
   container: {
     paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 30,
+    paddingTop: 0,
+    paddingBottom: 16,
   },
   welcome: {
     backgroundColor: '#4F63F6',
     marginHorizontal: -18,
-    marginTop: 8,
+    marginTop: 0,
     marginBottom: 22,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 24,
     paddingBottom: 30,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
